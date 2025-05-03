@@ -1,12 +1,32 @@
-import React from 'react';
-import service_background from '../assets/service_background.jpg';
-import eye_exam from '../assets/eye_exam.jpg';
-import glaucoma from '../assets/glaucoma.jpg';
-import appointment from '../assets/appointment.png';
+import React, { useState } from "react";
+import service_background from "../assets/service_background.jpg";
+import eye_exam from "../assets/eye_exam.jpg";
+import glaucoma from "../assets/glaucoma.jpg";
+import appointment from "../assets/appointment.png";
+import BookAppointmentForm from "./Book_Appointment_form"; // Import the appointment form
 
 const Service = () => {
+  const [showForm, setShowForm] = useState(false); // State for controlling the visibility of the appointment form
+
+  // Function to open the appointment form modal
+  const openForm = () => {
+    setShowForm(true);
+  };
+
+  // Function to close the appointment form modal
+  const closeForm = () => {
+    setShowForm(false);
+  };
+
   return (
-    <div className="min-h-screen min-w-full" style={{ backgroundImage: `url(${service_background})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div
+      className="min-h-screen min-w-full"
+      style={{
+        backgroundImage: `url(${service_background})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <div className="relative z-10 flex flex-col items-center justify-center pt-32 px-6 text-center">
         <p className="text-2xl text-black mb-2">What We Offer</p>
         <h2 className="text-3xl mb-20 font-semibold text-[#016c8c] md:text-4xl lg:text-5xl">
@@ -54,7 +74,12 @@ const Service = () => {
           </div>
 
           {/* Appointment Card */}
-          <div className="w-full max-w-sm rounded-lg relative group">
+          <div
+            className="w-full max-w-sm rounded-lg relative group"
+            onClick={openForm}
+          >
+            {" "}
+            {/* Open form on click */}
             <img
               src={appointment}
               alt="Appointment"
@@ -73,6 +98,22 @@ const Service = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal Overlay for Appointment Form */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-lg shadow-lg relative w-full max-w-md">
+            <button
+              onClick={closeForm} // Close the appointment form modal
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <BookAppointmentForm />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
