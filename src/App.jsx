@@ -6,6 +6,7 @@ import Service from './components/Service'
 import Appointment from './components/Appointment'
 import Footer from './components/Footer'
 import Doctors from './components/Doctors'
+import ChatBot from './components/ChatBot'
 const App = () => {
   return (
     <div>
@@ -13,6 +14,7 @@ const App = () => {
       <Header/>
     <HeroSection/>
     <Service/>
+    <ChatBot/>
     <Appointment /> 
     <Doctors />
     <Footer />
