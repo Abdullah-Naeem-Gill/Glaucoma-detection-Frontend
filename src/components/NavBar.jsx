@@ -1,10 +1,14 @@
 import React, { useState } from "react";
-import calendarIcon from "../assets/calendarIcon.png"; // Adjust the path if needed
-import BookAppointmentForm from "./Book_Appointment_form"; // Adjust path if needed
+import calendarIcon from "../assets/calendarIcon.png";
+import BookAppointmentForm from "./Book_Appointment_form";
+import LoginDoctor from "./LoginDoctor";
+import SignupDoctor from "./SignupDoctor";
 
 const NavBar = () => {
-  const [menuOpen, setMenuOpen] = useState(false); // Toggle mobile menu
-  const [showForm, setShowForm] = useState(false); // Toggle appointment form modal
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -18,9 +22,42 @@ const NavBar = () => {
     setShowForm(false);
   };
 
+  const openLogin = () => {
+    setShowLogin(true);
+    setMenuOpen(false); // Close mobile menu when opening login
+  };
+
+  const closeLogin = () => {
+    setShowLogin(false);
+  };
+
+  const openSignup = () => {
+    setShowSignup(true);
+    setShowLogin(false); // Close login when opening signup
+  };
+
+  const closeSignup = () => {
+    setShowSignup(false);
+  };
+
+  const handleSignupSuccess = () => {
+    closeSignup();
+    openLogin(); // After successful signup, show login form
+  };
+
   return (
     <>
       <div className="flex items-center justify-between mt-10 px-8 relative">
+        {/* Login as Doctor Button - Left Side */}
+        <div className="mr-auto hidden md:block">
+          <button
+            onClick={openLogin}
+            className="text-[#016c8c] px-4 py-2 rounded-lg hover:bg-[#016c8c] hover:text-white hover:bg-opacity-100 border border-[#016c8c] transition-colors duration-200"
+          >
+            Login as Doctor
+          </button>
+        </div>
+
         {/* Navigation Links - Centered */}
         <div className="absolute left-1/2 transform -translate-x-1/2 space-x-6 text-[#016c8c] text-2xl md:block hidden">
           <a href="#home">Home</a>
@@ -42,7 +79,7 @@ const NavBar = () => {
         <div className="ml-auto md:block hidden">
           <button
             onClick={openForm}
-            className="bg-[#016c8c] text-white px-4 py-2 rounded-lg hover:bg-opacity-80"
+            className="text-[#016c8c] px-4 py-2 rounded-lg hover:bg-[#016c8c] hover:text-white hover:bg-opacity-100 border border-[#016c8c] transition-colors duration-200 font-semibold"
           >
             REQUEST AN APPOINTMENT
           </button>
@@ -52,7 +89,7 @@ const NavBar = () => {
         <div className="md:hidden absolute right-0 mr-10">
           <button
             onClick={openForm}
-            className="bg-[#016c8c] text-white p-3 rounded-full shadow-lg hover:bg-opacity-80"
+            className="bg-[#016c8c] text-white p-3 rounded-full shadow-lg hover:bg-opacity-80 transition-colors duration-200"
             aria-label="Calendar"
           >
             <img src={calendarIcon} alt="Calendar Icon" className="w-6 h-6" />
@@ -61,7 +98,7 @@ const NavBar = () => {
 
         {/* Dropdown Menu for Mobile */}
         {menuOpen && (
-          <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-white shadow-md rounded-lg w-64 py-4 md:hidden">
+          <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-white shadow-md rounded-lg w-64 py-4 md:hidden z-50">
             <div className="flex flex-col space-y-4">
               <a href="#home" className="text-[#016c8c] text-xl pl-5">
                 Home
@@ -75,6 +112,12 @@ const NavBar = () => {
               <a href="#contact" className="text-[#016c8c] text-xl pl-5">
                 Contact Us
               </a>
+              <button
+                onClick={openLogin}
+                className="text-[#016c8c] text-xl pl-5 text-left hover:bg-[#016c8c] hover:text-white hover:bg-opacity-100 px-2 py-1 rounded transition-colors duration-200"
+              >
+                Login as Doctor
+              </button>
             </div>
           </div>
         )}
@@ -86,12 +129,44 @@ const NavBar = () => {
           <div className="bg-white p-8 rounded-lg shadow-lg relative w-full max-w-md">
             <button
               onClick={closeForm}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl"
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl transition-colors duration-200"
               aria-label="Close"
             >
               ✕
             </button>
             <BookAppointmentForm />
+          </div>
+        </div>
+      )}
+
+      {/* Modal Overlay for LoginDoctor */}
+      {showLogin && (
+        <div className="fixed inset-0 bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-lg shadow-lg relative w-full max-w-md">
+            <button
+              onClick={closeLogin}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl transition-colors duration-200"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <LoginDoctor onClose={closeLogin} onSignUpClick={openSignup} />
+          </div>
+        </div>
+      )}
+
+      {/* Modal Overlay for SignupDoctor */}
+      {showSignup && (
+        <div className="fixed inset-0 bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-lg shadow-lg relative w-full max-w-md">
+            <button
+              onClick={closeSignup}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl transition-colors duration-200"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <SignupDoctor onSignupSuccess={handleSignupSuccess} />
           </div>
         </div>
       )}

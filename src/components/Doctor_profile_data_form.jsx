@@ -39,13 +39,13 @@ const Doctor_profile_data_form = () => {
       ...prev,
       [name]: value,
     }));
-    setFormErrors((prev) => ({ ...prev, [name]: '' })); // Clear field error
+    setFormErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setImageFile(file);
-    setFormErrors((prev) => ({ ...prev, imageFile: '' })); // Clear image error
+    setFormErrors((prev) => ({ ...prev, imageFile: '' }));
   };
 
   const handleSubmit = async (e) => {
@@ -59,11 +59,18 @@ const Doctor_profile_data_form = () => {
       return;
     }
 
+    const token = localStorage.getItem('doctor_token');
+    if (!token) {
+      setError('Unauthorized: Please login first.');
+      return;
+    }
+
     try {
       const profileRes = await fetch('http://127.0.0.1:8000/doctors/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
           ...formData,
@@ -83,6 +90,9 @@ const Doctor_profile_data_form = () => {
 
         const imgRes = await fetch(`http://127.0.0.1:8000/images/upload/${doctorData.id}`, {
           method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
           body: imgForm,
         });
 
