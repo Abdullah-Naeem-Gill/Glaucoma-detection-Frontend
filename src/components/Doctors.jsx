@@ -6,6 +6,15 @@ const Doctors = () => {
   const [showForm, setShowForm] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [isLoggedInAsDoctor, setIsLoggedInAsDoctor] = useState(false);
+
+  // Check if the doctor is logged in by looking for a token in localStorage
+  useEffect(() => {
+    const token = localStorage.getItem("doctor_token");
+    if (token) {
+      setIsLoggedInAsDoctor(true);
+    }
+  }, []);
 
   // Update window width on resize
   useEffect(() => {
@@ -155,15 +164,17 @@ const Doctors = () => {
         </div>
       </div>
 
-      {/* Add Profile Button */}
-      <div className="mt-12 flex justify-center">
-        <button
-          className="bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700 transition"
-          onClick={() => setShowForm(true)}
-        >
-          Add Your Profile
-        </button>
-      </div>
+      {/* Add Profile Button - Only show if logged in as doctor */}
+      {isLoggedInAsDoctor && (
+        <div className="mt-12 flex justify-center">
+          <button
+            className="bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700 transition"
+            onClick={() => setShowForm(true)}
+          >
+            Add Your Profile
+          </button>
+        </div>
+      )}
 
       {/* Modal */}
       {showForm && (
