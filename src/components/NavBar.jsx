@@ -3,12 +3,16 @@ import calendarIcon from "../assets/calendarIcon.png";
 import BookAppointmentForm from "./Book_Appointment_form";
 import LoginDoctor from "./LoginDoctor";
 import SignupDoctor from "./SignupDoctor";
+import PatientLogin from "./PatientLogin";
+import PatientSignup from "./PatientSignup";
 
 const NavBar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  const [showSignup, setShowSignup] = useState(false);
+  const [showDoctorLogin, setShowDoctorLogin] = useState(false);
+  const [showDoctorSignup, setShowDoctorSignup] = useState(false);
+  const [showPatientLogin, setShowPatientLogin] = useState(false);
+  const [showPatientSignup, setShowPatientSignup] = useState(false);
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -22,39 +26,68 @@ const NavBar = () => {
     setShowForm(false);
   };
 
-  const openLogin = () => {
-    setShowLogin(true);
-    setMenuOpen(false); // Close mobile menu when opening login
+  const openDoctorLogin = () => {
+    setShowDoctorLogin(true);
+    setMenuOpen(false);
   };
 
-  const closeLogin = () => {
-    setShowLogin(false);
+  const closeDoctorLogin = () => {
+    setShowDoctorLogin(false);
   };
 
-  const openSignup = () => {
-    setShowSignup(true);
-    setShowLogin(false); // Close login when opening signup
+  const openDoctorSignup = () => {
+    setShowDoctorSignup(true);
+    setShowDoctorLogin(false);
   };
 
-  const closeSignup = () => {
-    setShowSignup(false);
+  const closeDoctorSignup = () => {
+    setShowDoctorSignup(false);
   };
 
-  const handleSignupSuccess = () => {
-    closeSignup();
-    openLogin(); // After successful signup, show login form
+  const openPatientLogin = () => {
+    setShowPatientLogin(true);
+    setMenuOpen(false);
+  };
+
+  const closePatientLogin = () => {
+    setShowPatientLogin(false);
+  };
+
+  const openPatientSignup = () => {
+    setShowPatientSignup(true);
+    setShowPatientLogin(false);
+  };
+
+  const closePatientSignup = () => {
+    setShowPatientSignup(false);
+  };
+
+  const handleDoctorSignupSuccess = () => {
+    closeDoctorSignup();
+    openDoctorLogin();
+  };
+
+  const handlePatientSignupSuccess = () => {
+    closePatientSignup();
+    openPatientLogin();
   };
 
   return (
     <>
       <div className="flex items-center justify-between mt-10 px-8 relative">
-        {/* Login as Doctor Button - Left Side */}
-        <div className="mr-auto hidden md:block">
+        {/* Login Buttons - Left Side */}
+        <div className="mr-auto hidden md:flex space-x-4">
           <button
-            onClick={openLogin}
+            onClick={openDoctorLogin}
             className="text-[#016c8c] px-4 py-2 rounded-lg hover:bg-[#016c8c] hover:text-white hover:bg-opacity-100 border border-[#016c8c] transition-colors duration-200"
           >
             Login as Doctor
+          </button>
+          <button
+            onClick={openPatientLogin}
+            className="text-[#016c8c] px-4 py-2 rounded-lg hover:bg-[#016c8c] hover:text-white hover:bg-opacity-100 border border-[#016c8c] transition-colors duration-200"
+          >
+            Login as Patient
           </button>
         </div>
 
@@ -113,10 +146,16 @@ const NavBar = () => {
                 Contact Us
               </a>
               <button
-                onClick={openLogin}
+                onClick={openDoctorLogin}
                 className="text-[#016c8c] text-xl pl-5 text-left hover:bg-[#016c8c] hover:text-white hover:bg-opacity-100 px-2 py-1 rounded transition-colors duration-200"
               >
                 Login as Doctor
+              </button>
+              <button
+                onClick={openPatientLogin}
+                className="text-[#016c8c] text-xl pl-5 text-left hover:bg-[#016c8c] hover:text-white hover:bg-opacity-100 px-2 py-1 rounded transition-colors duration-200"
+              >
+                Login as Patient
               </button>
             </div>
           </div>
@@ -139,34 +178,66 @@ const NavBar = () => {
         </div>
       )}
 
-      {/* Modal Overlay for LoginDoctor */}
-      {showLogin && (
+      {/* Modal Overlay for Doctor Login */}
+      {showDoctorLogin && (
         <div className="fixed inset-0 bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
           <div className="bg-white p-8 rounded-lg shadow-lg relative w-full max-w-md">
             <button
-              onClick={closeLogin}
+              onClick={closeDoctorLogin}
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl transition-colors duration-200"
               aria-label="Close"
             >
               ✕
             </button>
-            <LoginDoctor onClose={closeLogin} onSignUpClick={openSignup} />
+            <LoginDoctor onClose={closeDoctorLogin} onSignUpClick={openDoctorSignup} />
           </div>
         </div>
       )}
 
-      {/* Modal Overlay for SignupDoctor */}
-      {showSignup && (
+      {/* Modal Overlay for Doctor Signup */}
+      {showDoctorSignup && (
         <div className="fixed inset-0 bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
           <div className="bg-white p-8 rounded-lg shadow-lg relative w-full max-w-md">
             <button
-              onClick={closeSignup}
+              onClick={closeDoctorSignup}
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl transition-colors duration-200"
               aria-label="Close"
             >
               ✕
             </button>
-            <SignupDoctor onSignupSuccess={handleSignupSuccess} />
+            <SignupDoctor onSignupSuccess={handleDoctorSignupSuccess} />
+          </div>
+        </div>
+      )}
+
+      {/* Modal Overlay for Patient Login */}
+      {showPatientLogin && (
+        <div className="fixed inset-0 bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-lg shadow-lg relative w-full max-w-md">
+            <button
+              onClick={closePatientLogin}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl transition-colors duration-200"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <PatientLogin onClose={closePatientLogin} onSignUpClick={openPatientSignup} />
+          </div>
+        </div>
+      )}
+
+      {/* Modal Overlay for Patient Signup */}
+      {showPatientSignup && (
+        <div className="fixed inset-0 bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-lg shadow-lg relative w-full max-w-md">
+            <button
+              onClick={closePatientSignup}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl transition-colors duration-200"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <PatientSignup onSignupSuccess={handlePatientSignupSuccess} />
           </div>
         </div>
       )}

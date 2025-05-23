@@ -1,14 +1,10 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState } from 'react';
+import axios from 'axios';
 
 const LoginDoctor = ({ onClose, onSignUpClick }) => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
-  const [error, setError] = useState("");
-  const [token, setToken] = useState("");
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -16,46 +12,44 @@ const LoginDoctor = ({ onClose, onSignUpClick }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setToken("");
-
+    setError('');
+    setMessage('');
     try {
       const response = await axios.post(
-        "http://localhost:8000/doctorauth/login",
-        {
-          email: formData.email,
-          password: formData.password,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
+        'http://127.0.0.1:8000/doctorauth/login',
+        { email: formData.email, password: formData.password },
+        { headers: { 'Content-Type': 'application/json' } }
       );
-
-      setToken(response.data.access_token);
-      localStorage.setItem("doctor_token", response.data.access_token);
-      // Close the modal after successful login
-      onClose();
+      localStorage.setItem('doctor_token', response.data.access_token);
+      localStorage.setItem('doctor_email', formData.email);
+      try {
+        const doctorRes = await axios.get(`http://127.0.0.1:8000/doctorauth/by-email/${formData.email}`, {
+          headers: { Authorization: `Bearer ${response.data.access_token}` },
+        });
+        localStorage.setItem('doctor_id', doctorRes.data.id);
+        localStorage.setItem('userType', 'doctor');
+        console.log('Doctor login successful:', {
+          doctor_token: response.data.access_token,
+          doctor_email: formData.email,
+          doctor_id: doctorRes.data.id,
+        });
+      } catch (err) {
+        console.warn('Could not fetch doctor_id; relying on email');
+      }
+      setMessage('Login successful!');
+      setTimeout(onClose, 1500);
     } catch (err) {
-      setError(err.response?.data?.detail || "Login failed");
+      setError(err.response?.data?.detail || 'Login failed');
     }
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6 text-center text-[#016c8c]">
-        Doctor Login
-      </h2>
-
-      {error && <p className="text-red-500 mb-4 text-sm">{error}</p>}
-      {token && (
-        <p className="text-green-500 mb-4 text-sm">Login successful!</p>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
+    <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+      <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">Doctor Login</h2>
+      {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
+      {message && <p className="text-green-600 mb-4 text-sm">{message}</p>}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
           <label className="block text-gray-700 mb-1">Email</label>
           <input
             type="email"
@@ -63,11 +57,10 @@ const LoginDoctor = ({ onClose, onSignUpClick }) => {
             value={formData.email}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#016c8c]"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
-
-        <div className="mb-6">
+        <div>
           <label className="block text-gray-700 mb-1">Password</label>
           <input
             type="password"
@@ -75,23 +68,21 @@ const LoginDoctor = ({ onClose, onSignUpClick }) => {
             value={formData.password}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[#016c8c]"
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
-
         <button
           type="submit"
-          className="w-full bg-[#016c8c] text-white py-2 rounded hover:bg-opacity-90 transition-colors duration-200 mb-4"
+          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
         >
           Log In
         </button>
       </form>
-
-      <div className="text-center">
+      <div className="text-center mt-4">
         <p className="text-gray-600 mb-2">Don't have an account?</p>
         <button
           onClick={onSignUpClick}
-          className="text-[#016c8c] hover:text-[#014d63] font-medium transition-colors duration-200"
+          className="text-blue-600 hover:text-blue-800 font-medium transition"
         >
           Sign Up Here
         </button>

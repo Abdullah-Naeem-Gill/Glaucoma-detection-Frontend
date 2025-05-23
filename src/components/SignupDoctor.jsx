@@ -38,6 +38,7 @@ const SignupDoctor = ({ onSignupSuccess }) => {
         }
       );
 
+      localStorage.setItem('doctor_id', response.data.id);
       setSuccessMessage(`Signup successful! Welcome, Dr. ${response.data.name}`);
       setFormData({ email: '', name: '', specialization: '', password: '' });
 
