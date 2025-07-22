@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 const PatientLogin = ({ onClose, onSignUpClick }) => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [message, setMessage] = useState('');
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -10,39 +10,46 @@ const PatientLogin = ({ onClose, onSignUpClick }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage(""); // Clear previous message on new submit
     try {
-      const response = await fetch('http://127.0.0.1:8000/patientauth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("http://127.0.0.1:8000/patientauth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('patient_email', formData.email);
-        const patientRes = await fetch(`http://127.0.0.1:8000/patientauth/by-email/${formData.email}`, {
-          headers: { Authorization: `Bearer ${data.access_token}` },
+
+        // Store all required data for chat system
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("patient_email", data.email);
+        localStorage.setItem("patient_id", data.patient_id);
+        localStorage.setItem("userType", "patient");
+
+        console.log("Patient login successful:", {
+          access_token: data.access_token,
+          patient_email: data.email,
+          patient_id: data.patient_id,
         });
-        if (patientRes.ok) {
-          const patientData = await patientRes.json();
-          localStorage.setItem('patient_id', patientData.id);
-          localStorage.setItem('userType', 'patient');
-        }
-        console.log('Patient login successful:', { access_token: data.access_token, patient_email: formData.email, patient_id: localStorage.getItem('patient_id') });
-        setMessage('Login successful!');
+
+        setMessage("Login successful!");
         setTimeout(onClose, 1500);
       } else {
         const error = await response.json();
-        setMessage(error.detail || 'Login failed');
+        setMessage(error.detail || "Login failed");
       }
     } catch (error) {
-      setMessage('An error occurred during login');
+      setMessage("An error occurred during login");
+      console.error(error);
     }
   };
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">Patient Login</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">
+        Patient Login
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-gray-700">Email</label>
@@ -74,12 +81,22 @@ const PatientLogin = ({ onClose, onSignUpClick }) => {
         </button>
       </form>
       <div className="mt-4 text-center">
-        <button onClick={onSignUpClick} className="text-blue-600 hover:text-blue-800">
+        <button
+          onClick={onSignUpClick}
+          className="text-blue-600 hover:text-blue-800"
+        >
           Don't have an account? Sign up
         </button>
       </div>
       {message && (
-        <p className={`mt-4 text-center ${message.includes('failed') ? 'text-red-600' : 'text-green-600'} font-medium`}>
+        <p
+          className={`mt-4 text-center ${
+            message.toLowerCase().includes("failed") ||
+            message.toLowerCase().includes("error")
+              ? "text-red-600"
+              : "text-green-600"
+          } font-medium`}
+        >
           {message}
         </p>
       )}

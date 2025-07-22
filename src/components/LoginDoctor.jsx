@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
 const LoginDoctor = ({ onClose, onSignUpClick }) => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -12,40 +12,40 @@ const LoginDoctor = ({ onClose, onSignUpClick }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
+    setError("");
+    setMessage("");
     try {
+      // Login API call
       const response = await axios.post(
-        'http://127.0.0.1:8000/doctorauth/login',
+        "http://127.0.0.1:8000/doctorauth/login",
         { email: formData.email, password: formData.password },
-        { headers: { 'Content-Type': 'application/json' } }
+        { headers: { "Content-Type": "application/json" } }
       );
-      localStorage.setItem('doctor_token', response.data.access_token);
-      localStorage.setItem('doctor_email', formData.email);
-      try {
-        const doctorRes = await axios.get(`http://127.0.0.1:8000/doctorauth/by-email/${formData.email}`, {
-          headers: { Authorization: `Bearer ${response.data.access_token}` },
-        });
-        localStorage.setItem('doctor_id', doctorRes.data.id);
-        localStorage.setItem('userType', 'doctor');
-        console.log('Doctor login successful:', {
-          doctor_token: response.data.access_token,
-          doctor_email: formData.email,
-          doctor_id: doctorRes.data.id,
-        });
-      } catch (err) {
-        console.warn('Could not fetch doctor_id; relying on email');
-      }
-      setMessage('Login successful!');
+
+      // Store all required data for chat system
+      localStorage.setItem("doctor_token", response.data.access_token);
+      localStorage.setItem("doctor_email", response.data.email);
+      localStorage.setItem("doctor_id", response.data.doctor_id);
+      localStorage.setItem("userType", "doctor");
+
+      console.log("Doctor login successful:", {
+        doctor_token: response.data.access_token,
+        doctor_email: response.data.email,
+        doctor_id: response.data.doctor_id,
+      });
+
+      setMessage("Login successful!");
       setTimeout(onClose, 1500);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed');
+      setError(err.response?.data?.detail || "Login failed");
     }
   };
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">Doctor Login</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">
+        Doctor Login
+      </h2>
       {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
       {message && <p className="text-green-600 mb-4 text-sm">{message}</p>}
       <form onSubmit={handleSubmit} className="space-y-4">

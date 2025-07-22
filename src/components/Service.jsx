@@ -8,19 +8,19 @@ import BookAppointmentForm from "./Book_Appointment_form";
 const Service = () => {
   const [showForm, setShowForm] = useState(false);
   const [showGlaucomaModal, setShowGlaucomaModal] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const openForm = () => {
-    setShowForm(true);
-  };
+  const openForm = () => setShowForm(true);
+  const closeForm = () => setShowForm(false);
 
-  const closeForm = () => {
-    setShowForm(false);
-  };
+  const openComingSoon = () => setShowComingSoon(true);
+  const closeComingSoon = () => setShowComingSoon(false);
 
   const openGlaucomaModal = () => {
     setShowGlaucomaModal(true);
@@ -30,9 +30,7 @@ const Service = () => {
     setError(null);
   };
 
-  const closeGlaucomaModal = () => {
-    setShowGlaucomaModal(false);
-  };
+  const closeGlaucomaModal = () => setShowGlaucomaModal(false);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -41,9 +39,7 @@ const Service = () => {
       setError(null);
 
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-      };
+      reader.onloadend = () => setPreviewImage(reader.result);
       reader.readAsDataURL(file);
     }
   };
@@ -98,7 +94,10 @@ const Service = () => {
 
         <div className="w-full flex flex-col items-center space-y-10 md:flex-row md:justify-center md:space-x-12 md:space-y-0">
           {/* Eye Exam Card */}
-          <div className="w-full max-w-sm rounded-lg relative group cursor-pointer" onClick={openForm}>
+          <div
+            className="w-full max-w-sm rounded-lg relative group cursor-pointer"
+            onClick={openComingSoon}
+          >
             <img
               src={eye_exam}
               alt="Eye Exam"
@@ -117,7 +116,10 @@ const Service = () => {
           </div>
 
           {/* Glaucoma Card */}
-          <div className="w-full max-w-sm rounded-lg relative group cursor-pointer" onClick={openGlaucomaModal}>
+          <div
+            className="w-full max-w-sm rounded-lg relative group cursor-pointer"
+            onClick={openGlaucomaModal}
+          >
             <img
               src={glaucoma}
               alt="Glaucoma"
@@ -136,7 +138,10 @@ const Service = () => {
           </div>
 
           {/* Book Appointment Card */}
-          <div className="w-full max-w-sm rounded-lg relative group cursor-pointer" onClick={openForm}>
+          <div
+            className="w-full max-w-sm rounded-lg relative group cursor-pointer"
+            onClick={openForm}
+          >
             <div className="relative">
               <img
                 src={appointment}
@@ -174,6 +179,25 @@ const Service = () => {
         </div>
       )}
 
+      {/* Coming Soon Modal */}
+      {showComingSoon && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-lg shadow-lg relative w-full max-w-sm text-center mx-4">
+            <button
+              onClick={closeComingSoon}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-xl"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-bold mb-4 text-[#016c8c]">
+              Coming Soon
+            </h2>
+            <p className="text-gray-700">This feature is yet to be implemented.</p>
+          </div>
+        </div>
+      )}
+
       {/* Glaucoma Detection Modal */}
       {showGlaucomaModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
@@ -185,7 +209,9 @@ const Service = () => {
             >
               ✕
             </button>
-            <h2 className="text-2xl font-bold text-[#016c8c] mb-4">Glaucoma Detection</h2>
+            <h2 className="text-2xl font-bold text-[#016c8c] mb-4">
+              Glaucoma Detection
+            </h2>
 
             {!prediction ? (
               <form onSubmit={handleSubmit}>
@@ -214,11 +240,7 @@ const Service = () => {
                   </div>
                 )}
 
-                {error && (
-                  <div className="mb-4 text-red-500">
-                    {error}
-                  </div>
-                )}
+                {error && <div className="mb-4 text-red-500">{error}</div>}
 
                 <button
                   type="submit"
@@ -231,14 +253,21 @@ const Service = () => {
             ) : (
               <div className="text-center">
                 <h3 className="text-xl font-semibold mb-2">Result:</h3>
-                <div className={`text-2xl font-bold mb-2 ${
-                  prediction.prediction === "Glaucoma" ? "text-red-600" : "text-green-600"
-                }`}>
+                <div
+                  className={`text-2xl font-bold mb-2 ${
+                    prediction.prediction === "Glaucoma"
+                      ? "text-red-600"
+                      : "text-green-600"
+                  }`}
+                >
                   {prediction.prediction}
                 </div>
                 {prediction.prediction === "Glaucoma" && (
                   <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
-                    <p>Our analysis suggests possible glaucoma. Please consult with an eye specialist for further evaluation.</p>
+                    <p>
+                      Our analysis suggests possible glaucoma. Please consult
+                      with an eye specialist for further evaluation.
+                    </p>
                   </div>
                 )}
                 <button
