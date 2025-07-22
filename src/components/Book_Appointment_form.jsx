@@ -1,17 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 
 const Book_Appointment_form = () => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    dob: '',
-    phone: '',
-    email: '',
-    reason: '',
-    preferredTime: '',
-    preferredDate1: '',
-    preferredDate2: '',
+    firstName: "",
+    lastName: "",
+    dob: "",
+    phone: "",
+    email: "",
+    reason: "",
+    preferredTime: "",
+    preferredDate1: "",
+    preferredDate2: "",
+    doctor: "", // Add doctor field
   });
+  const [doctors, setDoctors] = useState([]); // Store doctors
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [doctorError, setDoctorError] = useState(null);
+
+  useEffect(() => {
+    // Fetch doctors from backend
+    const fetchDoctors = async () => {
+      setLoadingDoctors(true);
+      setDoctorError(null);
+      try {
+        const res = await fetch("http://127.0.0.1:8000/doctors/");
+        if (!res.ok) throw new Error("Failed to fetch doctors");
+        const data = await res.json();
+        setDoctors(data);
+      } catch (err) {
+        setDoctorError(err.message || "Error fetching doctors");
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+    fetchDoctors();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,50 +48,82 @@ const Book_Appointment_form = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/appointment/form/', {
-        method: 'POST',
+      const response = await fetch("http://127.0.0.1:8000/appointment/form/", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Appointment created:', data);
+        console.log("Appointment created:", data);
         alert("Appointment submitted successfully!");
 
         setFormData({
-          firstName: '',
-          lastName: '',
-          dob: '',
-          phone: '',
-          email: '',
-          reason: '',
-          preferredTime: '',
-          preferredDate1: '',
-          preferredDate2: '',
+          firstName: "",
+          lastName: "",
+          dob: "",
+          phone: "",
+          email: "",
+          reason: "",
+          preferredTime: "",
+          preferredDate1: "",
+          preferredDate2: "",
+          doctor: "", // Reset doctor field
         });
       } else {
         const errorText = await response.text();
-        throw new Error(errorText || 'Failed to submit appointment');
+        throw new Error(errorText || "Failed to submit appointment");
       }
     } catch (error) {
-      console.error('Submission error:', error.message);
-      alert('An error occurred while submitting the form.');
+      console.error("Submission error:", error.message);
+      alert("An error occurred while submitting the form.");
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto bg-green-100 shadow-lg p-8 mt-12 rounded-lg">
-      <h2 className="text-2xl font-bold mb-6 text-center text-green-800">Book an Appointment</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center text-green-800">
+        Book an Appointment
+      </h2>
 
       {/* Add scroll functionality here */}
       <div className="max-h-96 overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Doctor selection dropdown */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Doctor
+            </label>
+            {loadingDoctors ? (
+              <div className="text-gray-500">Loading doctors...</div>
+            ) : doctorError ? (
+              <div className="text-red-600">{doctorError}</div>
+            ) : (
+              <select
+                name="doctor"
+                value={formData.doctor}
+                onChange={handleChange}
+                required
+                className="w-full p-2 border rounded"
+              >
+                <option value="">Select a doctor</option>
+                {doctors.map((doc) => (
+                  <option key={doc.id} value={doc.id}>
+                    {doc.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           <div className="flex gap-4">
             <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                First Name
+              </label>
               <input
                 name="firstName"
                 value={formData.firstName}
@@ -78,7 +133,9 @@ const Book_Appointment_form = () => {
               />
             </div>
             <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Last Name
+              </label>
               <input
                 name="lastName"
                 value={formData.lastName}
@@ -90,7 +147,9 @@ const Book_Appointment_form = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Date of Birth
+            </label>
             <input
               type="date"
               name="dob"
@@ -102,7 +161,9 @@ const Book_Appointment_form = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number
+            </label>
             <input
               type="tel"
               name="phone"
@@ -114,7 +175,9 @@ const Book_Appointment_form = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
             <input
               type="email"
               name="email"
@@ -126,7 +189,9 @@ const Book_Appointment_form = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Visit</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Reason for Visit
+            </label>
             <textarea
               name="reason"
               value={formData.reason}
@@ -138,7 +203,9 @@ const Book_Appointment_form = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Time of Day</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Preferred Time of Day
+            </label>
             <select
               name="preferredTime"
               value={formData.preferredTime}
@@ -155,7 +222,9 @@ const Book_Appointment_form = () => {
 
           <div className="flex gap-4">
             <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Preferred Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                First Preferred Date
+              </label>
               <input
                 type="date"
                 name="preferredDate1"
@@ -166,7 +235,9 @@ const Book_Appointment_form = () => {
               />
             </div>
             <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Second Preferred Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Second Preferred Date
+              </label>
               <input
                 type="date"
                 name="preferredDate2"

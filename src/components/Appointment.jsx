@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import glasses from "../assets/glasses.png";
 
 const Appointment = () => {
@@ -8,11 +8,34 @@ const Appointment = () => {
     phone: "",
     time: "",
     date: "",
+    doctor: "", // Add doctor field
   });
+  const [doctors, setDoctors] = useState([]); // Store doctors
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [doctorError, setDoctorError] = useState(null);
 
   const [formErrors, setFormErrors] = useState({});
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    // Fetch doctors from backend
+    const fetchDoctors = async () => {
+      setLoadingDoctors(true);
+      setDoctorError(null);
+      try {
+        const res = await fetch("http://127.0.0.1:8000/doctors/");
+        if (!res.ok) throw new Error("Failed to fetch doctors");
+        const data = await res.json();
+        setDoctors(data);
+      } catch (error) {
+        setDoctorError(error.message || "Error fetching doctors");
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+    fetchDoctors();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -29,8 +52,10 @@ const Appointment = () => {
     const today = new Date().toISOString().split("T")[0];
 
     if (!formData.name.trim()) errors.name = "Name is required.";
-    if (!emailRegex.test(formData.email)) errors.email = "Invalid email address.";
-    if (!phoneRegex.test(formData.phone)) errors.phone = "Phone must be 10 digits.";
+    if (!emailRegex.test(formData.email))
+      errors.email = "Invalid email address.";
+    if (!phoneRegex.test(formData.phone))
+      errors.phone = "Phone must be 10 digits.";
     if (!formData.time) errors.time = "Time is required.";
     if (!formData.date) errors.date = "Date is required.";
     else if (formData.date < today) errors.date = "Date cannot be in the past.";
@@ -60,7 +85,14 @@ const Appointment = () => {
 
       if (response.ok) {
         setSuccess(true);
-        setFormData({ name: "", email: "", phone: "", time: "", date: "" });
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          time: "",
+          date: "",
+          doctor: "",
+        });
         setFormErrors({});
       } else {
         const data = await response.json();
@@ -82,7 +114,35 @@ const Appointment = () => {
           Please fill out the form below to schedule your appointment.
         </p>
 
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={handleSubmit}
+          noValidate
+        >
+          {/* Doctor selection dropdown */}
+          <div>
+            <select
+              name="doctor"
+              value={formData.doctor}
+              onChange={handleChange}
+              required
+              className="border border-gray-300 rounded px-4 py-2 w-full"
+            >
+              <option value="">Select a doctor</option>
+              {loadingDoctors ? (
+                <option disabled>Loading doctors...</option>
+              ) : doctorError ? (
+                <option disabled>{doctorError}</option>
+              ) : (
+                doctors.map((doc) => (
+                  <option key={doc.id} value={doc.id}>
+                    {doc.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
           <div>
             <input
               name="name"
@@ -92,7 +152,9 @@ const Appointment = () => {
               onChange={handleChange}
               className="border border-gray-300 rounded px-4 py-2 w-full"
             />
-            {formErrors.name && <p className="text-red-600 text-sm">{formErrors.name}</p>}
+            {formErrors.name && (
+              <p className="text-red-600 text-sm">{formErrors.name}</p>
+            )}
           </div>
 
           <div>
@@ -104,7 +166,9 @@ const Appointment = () => {
               onChange={handleChange}
               className="border border-gray-300 rounded px-4 py-2 w-full"
             />
-            {formErrors.email && <p className="text-red-600 text-sm">{formErrors.email}</p>}
+            {formErrors.email && (
+              <p className="text-red-600 text-sm">{formErrors.email}</p>
+            )}
           </div>
 
           <div>
@@ -116,7 +180,9 @@ const Appointment = () => {
               onChange={handleChange}
               className="border border-gray-300 rounded px-4 py-2 w-full"
             />
-            {formErrors.phone && <p className="text-red-600 text-sm">{formErrors.phone}</p>}
+            {formErrors.phone && (
+              <p className="text-red-600 text-sm">{formErrors.phone}</p>
+            )}
           </div>
 
           <div>
@@ -127,7 +193,9 @@ const Appointment = () => {
               onChange={handleChange}
               className="border border-gray-300 rounded px-4 py-2 w-full"
             />
-            {formErrors.time && <p className="text-red-600 text-sm">{formErrors.time}</p>}
+            {formErrors.time && (
+              <p className="text-red-600 text-sm">{formErrors.time}</p>
+            )}
           </div>
 
           <div>
@@ -138,7 +206,9 @@ const Appointment = () => {
               onChange={handleChange}
               className="border border-gray-300 rounded px-4 py-2 w-full"
             />
-            {formErrors.date && <p className="text-red-600 text-sm">{formErrors.date}</p>}
+            {formErrors.date && (
+              <p className="text-red-600 text-sm">{formErrors.date}</p>
+            )}
           </div>
 
           <button
@@ -159,9 +229,12 @@ const Appointment = () => {
 
       {/* Right-side section (hidden on small devices) */}
       <div className="hidden md:block ml-0 md:ml-20 mt-10 md:mt-0 max-w-md w-full">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Why Choose Us?</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          Why Choose Us?
+        </h2>
         <p className="text-gray-600 mb-4">
-          Experience world-class eye care and personalized service from our team.
+          Experience world-class eye care and personalized service from our
+          team.
         </p>
         <img src={glasses} alt="Glasses" className="rounded shadow-md w-full" />
       </div>

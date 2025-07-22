@@ -5,6 +5,10 @@ const WS_BASE_URL = "ws://localhost:8000/ws/chat";
 const ChatModal = ({ doctor, onClose }) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const messagesRef = useRef([]);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState(null);
   const [error, setError] = useState(null);
@@ -80,6 +84,8 @@ const ChatModal = ({ doctor, onClose }) => {
 
     ws.onmessage = (event) => {
       const text = event.data;
+      // DEBUG: log every message
+      console.log("WebSocket received:", text);
       const match = text.match(/^(doctor|patient) \(([^)]+)\): (.*)$/);
       if (match) {
         const [, role, senderEmail, msgText] = match;
@@ -92,7 +98,9 @@ const ChatModal = ({ doctor, onClose }) => {
           sender_email: senderEmail,
           role: role,
         };
-        setMessages((prev) => [...prev, msgObj]);
+        // Update ref and state to guarantee re-render
+        messagesRef.current = [...messagesRef.current, msgObj];
+        setMessages(messagesRef.current);
       }
     };
 
@@ -298,5 +306,4 @@ const ChatModal = ({ doctor, onClose }) => {
     </div>
   );
 };
-
 export default ChatModal;
