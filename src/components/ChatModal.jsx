@@ -13,8 +13,12 @@ const ChatModal = ({ doctor, onClose }) => {
   const [historyError, setHistoryError] = useState(null);
   const [error, setError] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isSendingImage, setIsSendingImage] = useState(false);
   const chatMessagesEndRef = useRef(null);
   const wsRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Get user info from localStorage
   const userType = localStorage.getItem("userType");
@@ -30,6 +34,53 @@ const ChatModal = ({ doctor, onClose }) => {
   // For patient, doctor prop is the doctor; for doctor, doctor prop is the patient
   const otherEmail = doctor?.email;
   const otherName = doctor?.name || doctor?.full_name || "User";
+
+  // Handle image selection
+  const handleImageSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file.");
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image size too large. Maximum size is 5MB.");
+      return;
+    }
+
+    setSelectedImage(file);
+    setError(null);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove selected image
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Convert image to base64
+  const imageToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
   // Fetch chat history when modal opens
   useEffect(() => {
@@ -51,6 +102,7 @@ const ChatModal = ({ doctor, onClose }) => {
             id: msg.id || msg.timestamp + msg.sender_email,
             isMine: msg.sender_email === myEmail,
             text: msg.message,
+            image_data: msg.image_data,
             timestamp: msg.timestamp,
             sender_email: msg.sender_email,
             role:
@@ -83,24 +135,47 @@ const ChatModal = ({ doctor, onClose }) => {
     };
 
     ws.onmessage = (event) => {
-      const text = event.data;
-      // DEBUG: log every message
-      console.log("WebSocket received:", text);
-      const match = text.match(/^(doctor|patient) \(([^)]+)\): (.*)$/);
-      if (match) {
-        const [, role, senderEmail, msgText] = match;
-        const isMine = senderEmail === myEmail;
-        const msgObj = {
-          id: `live-${Date.now()}-${Math.random()}`,
-          isMine,
-          text: msgText,
-          timestamp: new Date().toISOString(),
-          sender_email: senderEmail,
-          role: role,
-        };
-        // Update ref and state to guarantee re-render
-        messagesRef.current = [...messagesRef.current, msgObj];
-        setMessages(messagesRef.current);
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "received" || data.type === "sent") {
+          const msgObj = {
+            id: `live-${Date.now()}-${Math.random()}`,
+            isMine: data.type === "sent",
+            text: data.message,
+            image_data: data.image_data,
+            timestamp: new Date().toISOString(),
+            sender_email: data.sender_email,
+            role:
+              data.sender_email === myEmail
+                ? userType
+                : userType === "doctor"
+                ? "patient"
+                : "doctor",
+          };
+          messagesRef.current = [...messagesRef.current, msgObj];
+          setMessages(messagesRef.current);
+        } else if (data.type === "error") {
+          setError(data.message);
+        }
+      } catch {
+        // Handle legacy text format messages
+        const text = event.data;
+        const match = text.match(/^(doctor|patient) \(([^)]+)\): (.*)$/);
+        if (match) {
+          const [, role, senderEmail, msgText] = match;
+          const isMine = senderEmail === myEmail;
+          const msgObj = {
+            id: `live-${Date.now()}-${Math.random()}`,
+            isMine,
+            text: msgText,
+            timestamp: new Date().toISOString(),
+            sender_email: senderEmail,
+            role: role,
+          };
+          messagesRef.current = [...messagesRef.current, msgObj];
+          setMessages(messagesRef.current);
+        }
       }
     };
 
@@ -124,64 +199,60 @@ const ChatModal = ({ doctor, onClose }) => {
     chatMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Optimistically add sent message to messages
-  const handleSendMessage = () => {
-    if (!message.trim()) {
-      setError("Please enter a message.");
+  // Send message or image
+  const handleSendMessage = async () => {
+    if (!message.trim() && !selectedImage) {
+      setError("Please enter a message or select an image.");
       return;
     }
     if (!isConnected) {
       setError("Not connected to chat server.");
       return;
     }
+
     setError(null);
-    const msgObj = {
-      id: `live-${Date.now()}-${Math.random()}`,
-      isMine: true,
-      text: message.trim(),
-      timestamp: new Date().toISOString(),
-      sender_email: myEmail,
-      role: userType,
-    };
-    setMessages((prev) => [...prev, msgObj]);
+    setIsSendingImage(true);
+
     try {
+      let imageData = null;
+      if (selectedImage) {
+        imageData = await imageToBase64(selectedImage);
+      }
+
+      const msgObj = {
+        id: `live-${Date.now()}-${Math.random()}`,
+        isMine: true,
+        text: message.trim(),
+        image_data: imageData,
+        timestamp: new Date().toISOString(),
+        sender_email: myEmail,
+        role: userType,
+      };
+      setMessages((prev) => [...prev, msgObj]);
+
+      // Send to WebSocket
       wsRef.current?.send(
         JSON.stringify({
           to: otherEmail,
           message: message.trim(),
+          image_data: imageData,
         })
       );
+
+      // Clear form
       setMessage("");
+      setSelectedImage(null);
+      setImagePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } catch (error) {
       setError("Failed to send message.");
       console.error("Send error:", error);
+    } finally {
+      setIsSendingImage(false);
     }
   };
-
-  // Add received messages in real time (no duplicate prevention)
-  useEffect(() => {
-    if (!wsRef.current) return;
-    const ws = wsRef.current;
-    ws.onmessage = (event) => {
-      const text = event.data;
-      const match = text.match(/^(doctor|patient) \(([^)]+)\): (.*)$/);
-      if (match) {
-        const [, role, senderEmail, msgText] = match;
-        const isMine = senderEmail === myEmail;
-        const msgObj = {
-          id: `live-${Date.now()}-${Math.random()}`,
-          isMine,
-          text: msgText,
-          timestamp: new Date().toISOString(),
-          sender_email: senderEmail,
-          role: role,
-        };
-        setMessages((prev) => [...prev, msgObj]);
-      }
-    };
-    // No need to handle confirmation or welcome messages for chatMessages
-    // ws.onerror/ws.onclose handled elsewhere
-  }, [myEmail]);
 
   if (!otherName) {
     return (
@@ -264,6 +335,16 @@ const ChatModal = ({ doctor, onClose }) => {
                       : otherName}
                   </p>
                   {msg.text && <p className="text-sm">{String(msg.text)}</p>}
+                  {msg.image_data && (
+                    <div className="mt-2">
+                      <img
+                        src={`data:image/jpeg;base64,${msg.image_data}`}
+                        alt="Shared image"
+                        className="max-w-full h-auto rounded-md"
+                        style={{ maxHeight: "200px" }}
+                      />
+                    </div>
+                  )}
                   <span className="text-xs text-opacity-75 block text-right mt-1">
                     {msg.timestamp
                       ? new Date(msg.timestamp).toLocaleTimeString([], {
@@ -278,7 +359,57 @@ const ChatModal = ({ doctor, onClose }) => {
           )}
           <div ref={chatMessagesEndRef} />
         </div>
+
+        {/* Image Preview */}
+        {imagePreview && (
+          <div className="mb-4 relative">
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="max-w-full h-auto rounded-md"
+              style={{ maxHeight: "150px" }}
+            />
+            <button
+              onClick={handleRemoveImage}
+              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
+              aria-label="Remove image"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center space-x-2">
+          {/* Image Upload Button */}
+          <button
+            className="bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600 transition disabled:bg-gray-300"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={!isConnected}
+            aria-label="Upload image"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+
           <input
             type="text"
             placeholder="Type your message..."
@@ -291,15 +422,15 @@ const ChatModal = ({ doctor, onClose }) => {
                 handleSendMessage();
               }
             }}
-            disabled={!isConnected}
+            disabled={!isConnected || isSendingImage}
           />
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition disabled:bg-blue-300"
             onClick={handleSendMessage}
-            disabled={!isConnected}
+            disabled={!isConnected || isSendingImage}
             aria-label="Send message"
           >
-            Send
+            {isSendingImage ? "Sending..." : "Send"}
           </button>
         </div>
       </div>
